@@ -26,9 +26,7 @@ trait BaseService {
      *
      * @return array
      */
-    protected function getContainer(): array {
-        return [];
-    }
+    protected abstract function getContainer(): array;
 
     /**
      * Через рефлексию создает реализацию переданного интерфейса.
@@ -82,6 +80,44 @@ trait BaseService {
 
         return $refClass->newInstanceArgs($parameters);
     }
+    
+    /**
+     * Возвращает массив с параметрами, которые необходимо внедрить
+     *
+     * @return DIParameter[]
+     * @throws \Bitrix\Main\ArgumentException
+     * @throws \Bitrix\Main\ArgumentTypeException
+     * @throws \Bitrix\Main\Engine\AutoWire\BinderArgumentException
+     * @throws \Bitrix\Main\NotImplementedException
+     */
+    public function getAutoWiredParameters(): array {
+        $container = $this->getContainer();
+
+        $dIParameters = [];
+
+        foreach ($container as $interface => $element) {
+            if (is_numeric($interface) || (!interface_exists($interface) && !class_exists($interface))) {
+                throw new Exception(
+                    Loc::getMessage(
+                        'POLUS_DI_SERVICE_ABSTRACT_NOT_FOUND',
+                        ['#ABSTRACT#' => $interface]
+                    )
+                );
+            }
+
+            if ($element['variable']) {
+                $dIParameters[] = new DIParameter(
+                    $interface,
+                    $element['variable'],
+                    function () use ($interface) {
+                        return $this->build($interface);
+                    }
+                );
+            }
+        }
+
+        return $dIParameters;
+    }
 }
 ```
 
@@ -124,24 +160,6 @@ trait BasketService {
                 'class' => IblockRepository::class,
                 'parameters' => [Constants::IBLOCK_CATALOG_CODE]
             ]
-        ];
-    }
-
-    /**
-     * Возвращает массив с параметрами, которые необходимо внедрить
-     *
-     * @return DIParameter[]
-     * @throws \Bitrix\Main\Engine\AutoWire\BinderArgumentException
-     */
-    public function getAutoWiredParameters(): array {
-        return [
-            new DIParameter(
-                IBasketExport::class,
-                'basketExport',
-                function() {
-                    return $this->build(IBasketExport::class);
-                }
-            )
         ];
     }
 }
