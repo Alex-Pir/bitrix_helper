@@ -97,8 +97,8 @@ class Cache
 ```php
 Cache::keep(
     md5(serialize([$parameter1, $parameter2])),
-    $cacheTime,
     Cache::CACHE_TIME_SHORT,
+    '/web/page_directory/',
     function () use ($parameter1, $parameter2) {
         
     },
@@ -107,7 +107,7 @@ Cache::keep(
 
 Cache::keepAlways(
     md5(serialize([$parameter1, $parameter2])),
-    Cache::CACHE_TIME_SHORT,
+    '/web/page_directory/',
     function () use ($parameter1, $parameter2) {
         
     },
